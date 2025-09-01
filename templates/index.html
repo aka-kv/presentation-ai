@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>AI Voice Presentation</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: #000000;
+        min-height: 100vh;
+        color: #ffffff;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .presentation-container {
+        background: #111111;
+        border-radius: 8px;
+        padding: 30px;
+        margin: 20px auto;
+        max-width: 900px;
+        border: 1px solid #333333;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      }
+
+      .slide-display {
+        background: #ffffff;
+        color: #000000;
+        border-radius: 8px;
+        padding: 40px;
+        margin: 20px 0;
+        min-height: 400px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+      }
+
+      .slide-display::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: #000000;
+      }
+
+      .slide-number {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        background: #000000;
+        color: #ffffff;
+        padding: 5px 12px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: bold;
+      }
+
+      .slide h2 {
+        color: #000000;
+        font-size: 2.2rem;
+        margin-bottom: 25px;
+        font-weight: 700;
+      }
+
+      .slide p {
+        color: #000000;
+        font-size: 1.1rem;
+        line-height: 1.7;
+        margin-bottom: 15px;
+      }
+
+      .controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        margin: 30px 0;
+        flex-wrap: wrap;
+      }
+
+      .btn-primary {
+        background: #ffffff;
+        color: #000000;
+        border: 2px solid #ffffff;
+        padding: 12px 25px;
+        border-radius: 4px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary:hover {
+        background: #000000;
+        color: #ffffff;
+        border-color: #ffffff;
+      }
+
+      .btn-secondary {
+        background: transparent;
+        border: 1px solid #666666;
+        color: #ffffff;
+        padding: 10px 20px;
+        border-radius: 4px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .btn-secondary:hover {
+        background: #ffffff;
+        color: #000000;
+        border-color: #ffffff;
+      }
+
+      .status-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #222222;
+        padding: 15px 20px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        border: 1px solid #333333;
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .status-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
+
+      .status-disconnected {
+        background-color: #666666;
+      }
+      .status-connecting {
+        background-color: #999999;
+      }
+      .status-connected {
+        background-color: #ffffff;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      .visualizer {
+        width: 100%;
+        height: 60px;
+        background: #222222;
+        border-radius: 4px;
+        margin: 10px 0;
+        border: 1px solid #333333;
+      }
+
+      .slide-nav {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin: 20px 0;
+      }
+
+      .slide-nav button {
+        background: transparent;
+        border: 1px solid #666666;
+        color: #ffffff;
+        padding: 8px 15px;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+      }
+
+      .slide-nav button:hover:not(:disabled) {
+        background: #ffffff;
+        color: #000000;
+        border-color: #ffffff;
+      }
+
+      .slide-nav button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+        border-color: #333333;
+        color: #666666;
+      }
+
+      .logs-link {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: transparent;
+        color: #ffffff;
+        padding: 10px 15px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        border: 1px solid #666666;
+        transition: all 0.3s ease;
+      }
+
+      .logs-link:hover {
+        background: #ffffff;
+        color: #000000;
+        text-decoration: none;
+        border-color: #ffffff;
+      }
+    </style>
+  </head>
+  <body>
+    <a href="/logs" class="logs-link">📊 View Logs</a>
+
+    <div class="container">
+      <div class="presentation-container">
+        <h1 class="text-center mb-4">🎙️ AI Voice Presentation</h1>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+          <div class="status-indicator">
+            <div
+              id="connectionStatus"
+              class="status-dot status-disconnected"
+            ></div>
+            <span id="statusText">Disconnected</span>
+          </div>
+          <div>
+            <small>Slide <span id="currentSlideNumber">1</span> of 2</small>
+          </div>
+        </div>
+
+        <!-- Debug Status -->
+        <div
+          id="debugStatus"
+          style="
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+          "
+        >
+          <div>🔍 Debug: <span id="debugText">Ready</span></div>
+        </div>
+
+        <!-- Slide Display -->
+        <div class="slide-display">
+          <div class="slide-number">Slide <span id="slideNumber">1</span></div>
+          <div id="slideContent">
+            <div class="slide" id="slide1">
+              <h2>🌌 The Solar System</h2>
+              <p>
+                Our solar system is a gravitationally bound system consisting of
+                the Sun and the objects that orbit it.
+              </p>
+              <p>
+                It formed 4.6 billion years ago from the gravitational collapse
+                of a giant interstellar molecular cloud.
+              </p>
+              <p>
+                The solar system consists of the Sun, eight planets, dozens of
+                moons, and millions of asteroids and comets.
+              </p>
+              <p>
+                The four inner planets (Mercury, Venus, Earth, Mars) are
+                terrestrial planets composed primarily of rock and metal.
+              </p>
+            </div>
+
+            <div class="slide" id="slide2" style="display: none">
+              <h2>🔴 Mars - The Red Planet</h2>
+              <p>
+                Mars is the fourth planet from the Sun and the second-smallest
+                planet in our solar system.
+              </p>
+              <p>
+                It's often called the "Red Planet" due to iron oxide (rust) on
+                its surface, giving it a reddish appearance.
+              </p>
+              <p>
+                Mars has two small moons: Phobos and Deimos, which are thought
+                to be captured asteroids.
+              </p>
+              <p>
+                The planet has polar ice caps, the largest volcano in the solar
+                system (Olympus Mons), and evidence of ancient river valleys.
+              </p>
+              <p>
+                Current missions are searching for signs of past or present
+                life, making Mars a key target for human exploration.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Controls -->
+        <!-- <div class="slide-nav">
+          <button id="prevBtn" onclick="changeSlide(-1)" disabled>
+            ← Previous
+          </button>
+          <button id="nextBtn" onclick="changeSlide(1)">Next →</button>
+        </div> -->
+
+        <!-- Main Controls -->
+        <div class="controls">
+          <button id="startBtn" class="btn btn-primary">
+            🎤 Start Presentation
+          </button>
+        </div>
+
+        <!-- Audio Visualizers -->
+        <div class="row mt-4">
+          <div class="col-md-6">
+            <div class="text-center mb-2">
+              <small>🎤 Your Voice</small>
+            </div>
+            <canvas id="localVisualizer" class="visualizer"></canvas>
+          </div>
+          <div class="col-md-6">
+            <div class="text-center mb-2">
+              <small>🤖 AI Response</small>
+            </div>
+            <canvas id="backendVisualizer" class="visualizer"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      // Global variables
+      let pc = null;
+      let dc = null;
+      let isConnected = false;
+      let currentSlide = 1;
+      let totalSlides = 2;
+      let isPresenting = false;
+      let lastAIActivity = Date.now();
+      let silenceCheckInterval = null;
+
+      // DOM elements
+      const startBtn = document.getElementById("startBtn");
+      const statusIndicator = document.getElementById("connectionStatus");
+      const statusText = document.getElementById("statusText");
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+
+      /**
+       * Update connection status UI
+       */
+      function updateStatus(status, text) {
+        statusIndicator.className = `status-dot status-${status}`;
+        statusText.textContent = text;
+      }
+
+      /**
+       * Start monitoring AI activity to prevent silence
+       */
+      function startSilenceMonitoring() {
+        if (silenceCheckInterval) clearInterval(silenceCheckInterval);
+
+        silenceCheckInterval = setInterval(() => {
+          if (isPresenting && isConnected && dc && dc.readyState === "open") {
+            const timeSinceLastActivity = Date.now() - lastAIActivity;
+
+            // If AI has been silent for more than 8 seconds, prompt it
+            if (timeSinceLastActivity > 8000) {
+              console.log("🔕 AI has been silent, prompting to continue...");
+              promptAIToContinue();
+              lastAIActivity = Date.now(); // Reset timer
+            }
+          }
+        }, 3000); // Check every 3 seconds
+      }
+
+      /**
+       * Stop monitoring AI activity
+       */
+      function stopSilenceMonitoring() {
+        if (silenceCheckInterval) {
+          clearInterval(silenceCheckInterval);
+          silenceCheckInterval = null;
+        }
+      }
+
+      /**
+       * Prompt AI to continue presenting if it goes silent
+       */
+      function promptAIToContinue() {
+        if (!isConnected || !dc || dc.readyState !== "open") return;
+
+        const slideContent = getSlideContent(currentSlide);
+        const promptMessage = {
+          type: "conversation.item.create",
+          item: {
+            type: "message",
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text: `Please continue presenting slide ${currentSlide} about "${slideContent.title}". Share more fascinating details, ask engaging questions, or offer to move to the next slide. Don't go silent!`,
+              },
+            ],
+          },
+        };
+
+        dc.send(JSON.stringify(promptMessage));
+
+        const responseCreate = {
+          type: "response.create",
+        };
+        dc.send(JSON.stringify(responseCreate));
+
+        logEvent("ai_silence_prompt", { slide: currentSlide });
+      }
+
+      /**
+       * Log events to the server
+       */
+      async function logEvent(event, data = {}) {
+        try {
+          await fetch("/api/log", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              event: event,
+              data: data,
+              slide: currentSlide,
+            }),
+          });
+        } catch (error) {
+          console.error("Failed to log event:", error);
+        }
+      }
+
+      /**
+       * Change slide and update UI
+       */
+      function changeSlide(direction) {
+        const newSlide = currentSlide + direction;
+        if (newSlide < 1 || newSlide > totalSlides) return;
+
+        // Hide current slide
+        document.getElementById(`slide${currentSlide}`).style.display = "none";
+
+        // Update slide number
+        currentSlide = newSlide;
+
+        // Show new slide
+        document.getElementById(`slide${currentSlide}`).style.display = "block";
+
+        // Update UI
+        document.getElementById("slideNumber").textContent = currentSlide;
+        document.getElementById("currentSlideNumber").textContent =
+          currentSlide;
+
+        // Update navigation buttons
+        prevBtn.disabled = currentSlide === 1;
+        nextBtn.disabled = currentSlide === totalSlides;
+
+        // Log slide change
+        logEvent("slide_change", {
+          previous_slide: currentSlide - direction,
+          new_slide: currentSlide,
+          triggered_by: "user",
+        });
+
+        // Notify AI about slide change if connected
+        if (isConnected && dc && dc.readyState === "open") {
+          console.log(`User manually changed to slide ${currentSlide}`);
+          setTimeout(() => {
+            sendSlideContext();
+          }, 100);
+        }
+      }
+
+      /**
+       * Notify AI about current slide context
+       */
+      function notifyAISlideChange() {
+        // Simply inform AI about current slide in the conversation
+        const slideContent = getSlideContent(currentSlide);
+        console.log(
+          `AI notified about slide ${currentSlide}: ${slideContent.title}`
+        );
+      }
+
+      /**
+       * Get slide content for AI
+       */
+      function getSlideContent(slideNum) {
+        const slides = {
+          1: {
+            title: "The Solar System",
+            content:
+              "Our solar system formed 4.6 billion years ago from gravitational collapse. It consists of the Sun, eight planets, dozens of moons, and millions of asteroids and comets. The four inner planets (Mercury, Venus, Earth, Mars) are terrestrial planets composed of rock and metal.",
+          },
+          2: {
+            title: "Mars - The Red Planet",
+            content:
+              "Mars is the fourth planet from the Sun, called the Red Planet due to iron oxide on its surface. It has two small moons: Phobos and Deimos. Key features include polar ice caps, Olympus Mons (largest volcano), and ancient river valleys. Current missions search for signs of life.",
+          },
+        };
+        return slides[slideNum] || slides[1];
+      }
+
+      /**
+       * Initialize the WebRTC connection with the OpenAI realtime API.
+       */
+      async function initializeConnection() {
+        try {
+          updateStatus("connecting", "Connecting...");
+          startBtn.disabled = true;
+          startBtn.textContent = "🔄 Connecting...";
+
+          // 1. Get an ephemeral key from your server
+          const tokenResponse = await fetch("/session");
+          const tokenData = await tokenResponse.json();
+
+          if (tokenData.error) {
+            throw new Error(tokenData.error);
+          }
+
+          const EPHEMERAL_KEY = tokenData.client_secret.value;
+          console.log("Ephemeral key received");
+
+          // 2. Create a new RTCPeerConnection
+          pc = new RTCPeerConnection();
+
+          // 3. Set up remote audio playback
+          const audioEl = document.createElement("audio");
+          audioEl.autoplay = true;
+          document.body.appendChild(audioEl);
+
+          pc.ontrack = (e) => {
+            if (e.streams && e.streams[0]) {
+              audioEl.srcObject = e.streams[0];
+              startBackendVisualizer(e.streams[0]);
+            }
+          };
+
+          // 4. Get the microphone stream
+          const micStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
+          pc.addTrack(micStream.getTracks()[0]);
+          startLocalVisualizer(micStream);
+
+          // 5. Set up a data channel for events
+          dc = pc.createDataChannel("oai-events");
+          dc.addEventListener("open", () => {
+            console.log("Data channel opened");
+            isConnected = true;
+            updateStatus("connected", "Ready for presentation");
+            startBtn.disabled = false;
+            startBtn.textContent = "🎤 Start Presentation";
+            logEvent("connection_established");
+          });
+
+          dc.addEventListener("message", (e) => {
+            console.log("Data Channel message:", e.data);
+            try {
+              const message = JSON.parse(e.data);
+
+              // Track AI activity to prevent silence
+              if (
+                message.type &&
+                (message.type.startsWith("response") ||
+                  message.type === "conversation.item.created")
+              ) {
+                lastAIActivity = Date.now();
+              }
+
+              // Handle different message types
+              if (message.type === "error") {
+                console.error("OpenAI Error:", message);
+                logEvent("ai_error", { error: message });
+              }
+
+              // Handle function calls - check multiple possible formats
+              if (
+                message.type === "response.function_call_delta" &&
+                message.delta
+              ) {
+                console.log("Received function call delta:", message.delta);
+                logEvent("ai_function_call", { function_call: message.delta });
+                handleAIFunctionCall(message.delta);
+              } else if (
+                message.type === "response.function_call" &&
+                message.function_call
+              ) {
+                console.log("Received function call:", message.function_call);
+                logEvent("ai_function_call", {
+                  function_call: message.function_call,
+                });
+                handleAIFunctionCall(message.function_call);
+              } else if (message.name === "navigate_to_slide") {
+                // Direct function call
+                handleAIFunctionCall(message);
+              }
+
+              // Log when AI finishes speaking
+              if (message.type === "response.done") {
+                console.log("🎤 AI finished response");
+                // Let silence monitoring handle prompting if needed
+              }
+            } catch (error) {
+              console.log("Non-JSON message:", e.data);
+            }
+          });
+
+          // 6. Create an SDP offer
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+
+          // 7. Send the SDP offer to the OpenAI realtime API
+          const baseUrl = "https://api.openai.com/v1/realtime";
+          const model = "gpt-4o-realtime-preview-2024-12-17";
+          const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
+            method: "POST",
+            body: offer.sdp,
+            headers: {
+              Authorization: `Bearer ${EPHEMERAL_KEY}`,
+              "Content-Type": "application/sdp",
+            },
+          });
+
+          // 8. Get the SDP answer and set it as the remote description
+          const answer = {
+            type: "answer",
+            sdp: await sdpResponse.text(),
+          };
+          await pc.setRemoteDescription(answer);
+          console.log("WebRTC connection established");
+        } catch (error) {
+          console.error("Error initializing WebRTC connection:", error);
+          updateStatus("disconnected", "Connection failed");
+          startBtn.disabled = false;
+          startBtn.textContent = "🎤 Start Presentation";
+          logEvent("connection_failed", { error: error.message });
+          alert(`Connection failed: ${error.message}`);
+        }
+      }
+
+      /**
+       * Handle AI function calls for slide navigation
+       */
+      function handleAIFunctionCall(delta) {
+        console.log("🤖 Function call received:", delta);
+
+        if (delta.name === "navigate_to_slide") {
+          try {
+            let targetSlide;
+
+            // Handle different argument formats
+            if (delta.arguments) {
+              if (typeof delta.arguments === "string") {
+                const args = JSON.parse(delta.arguments);
+                targetSlide = args.slide_number;
+              } else {
+                targetSlide = delta.arguments.slide_number;
+              }
+            }
+
+            console.log("🎯 AI requesting navigation to slide:", targetSlide);
+            console.log("📍 Current slide:", currentSlide);
+            updateDebugStatus(
+              `AI wants slide ${targetSlide} (current: ${currentSlide})`
+            );
+
+            if (targetSlide && targetSlide >= 1 && targetSlide <= totalSlides) {
+              if (targetSlide !== currentSlide) {
+                logEvent("ai_slide_navigation", {
+                  target_slide: targetSlide,
+                  from_slide: currentSlide,
+                  success: true,
+                });
+
+                // Navigate to the requested slide
+                navigateToSlide(targetSlide);
+              } else {
+                console.log("⚠️ AI requested current slide, ignoring");
+                logEvent("ai_slide_navigation", {
+                  target_slide: targetSlide,
+                  from_slide: currentSlide,
+                  success: false,
+                  reason: "already_on_slide",
+                });
+              }
+            } else {
+              console.error("❌ Invalid slide number:", targetSlide);
+              logEvent("ai_slide_navigation", {
+                target_slide: targetSlide,
+                from_slide: currentSlide,
+                success: false,
+                reason: "invalid_slide_number",
+              });
+            }
+          } catch (error) {
+            console.error("❌ Error handling AI function call:", error);
+            logEvent("ai_function_call_error", { error: error.message });
+          }
+        } else {
+          console.log("🔍 Unknown function call:", delta.name);
+        }
+      }
+
+      /**
+       * Navigate directly to a specific slide
+       */
+      function navigateToSlide(slideNumber) {
+        if (
+          slideNumber < 1 ||
+          slideNumber > totalSlides ||
+          slideNumber === currentSlide
+        ) {
+          console.log(
+            `Navigation ignored: slide ${slideNumber} (current: ${currentSlide})`
+          );
+          return;
+        }
+
+        // Hide current slide
+        document.getElementById(`slide${currentSlide}`).style.display = "none";
+
+        // Update slide number
+        const previousSlide = currentSlide;
+        currentSlide = slideNumber;
+
+        // Show new slide
+        document.getElementById(`slide${currentSlide}`).style.display = "block";
+
+        // Update UI
+        document.getElementById("slideNumber").textContent = currentSlide;
+        document.getElementById("currentSlideNumber").textContent =
+          currentSlide;
+
+        // Update navigation buttons
+        prevBtn.disabled = currentSlide === 1;
+        nextBtn.disabled = currentSlide === totalSlides;
+
+        // Log slide change
+        logEvent("slide_change", {
+          previous_slide: previousSlide,
+          new_slide: currentSlide,
+          triggered_by: "ai",
+        });
+
+        console.log(
+          `✅ Successfully navigated from slide ${previousSlide} to slide ${currentSlide}`
+        );
+
+        // Update debug status
+        updateDebugStatus(`Navigated to slide ${currentSlide}`);
+
+        // Immediately inform AI about the new slide context
+        setTimeout(() => {
+          sendSlideContext();
+        }, 100);
+      }
+
+      /**
+       * Send current slide context to AI
+       */
+      function sendSlideContext() {
+        if (!isConnected || !dc || dc.readyState !== "open") return;
+
+        const slideContent = getSlideContent(currentSlide);
+        const contextMessage = {
+          type: "conversation.item.create",
+          item: {
+            type: "message",
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text: `SYSTEM UPDATE: You are now on slide ${currentSlide} - "${slideContent.title}". Start presenting this slide's content immediately! Be enthusiastic and engaging. Don't go silent - keep talking about this fascinating topic!`,
+              },
+            ],
+          },
+        };
+
+        dc.send(JSON.stringify(contextMessage));
+
+        // Trigger AI response
+        const responseCreate = {
+          type: "response.create",
+        };
+        dc.send(JSON.stringify(responseCreate));
+
+        console.log(`📍 Sent slide context to AI: Slide ${currentSlide}`);
+        updateDebugStatus(`Sent context: Slide ${currentSlide}`);
+      }
+
+      /**
+       * Start the presentation narration
+       */
+      function startNarration() {
+        if (!isConnected || !dc) {
+          console.error("Not connected to OpenAI");
+          return;
+        }
+
+        isPresenting = true;
+        startBtn.textContent = "🎙️ Presenting... (Interrupt anytime!)";
+        startBtn.disabled = true;
+        logEvent("presentation_started", { starting_slide: currentSlide });
+
+        // Start monitoring for AI silence
+        startSilenceMonitoring();
+        lastAIActivity = Date.now();
+
+        // Define available functions for the AI
+        const functions = [
+          {
+            type: "function",
+            name: "navigate_to_slide",
+            description:
+              "Navigate to a specific slide when user says 'next slide', 'previous slide', 'go to slide X', etc.",
+            parameters: {
+              type: "object",
+              properties: {
+                slide_number: {
+                  type: "integer",
+                  description: "The slide number to navigate to (1 or 2)",
+                  enum: [1, 2],
+                },
+              },
+              required: ["slide_number"],
+            },
+          },
+        ];
+
+        // Send initial presentation instructions with function definitions
+        const instructions = {
+          type: "session.update",
+          session: {
+            instructions: `You are an enthusiastic AI presenter for a technical interview demonstration. You will actively present slides about space science, demonstrating real-time voice interaction and slide navigation capabilities.
+
+PRESENTATION STYLE:
+- Be engaging, enthusiastic, and educational
+- Speak continuously and don't go silent unless interrupted
+- Present content in an interesting, conversational way
+- Ask rhetorical questions to keep engagement
+- Provide fascinating details and facts
+- Always be ready to continue talking about the current slide
+
+CURRENT SLIDE: You are starting on slide ${currentSlide}. 
+
+SLIDE CONTENT TO PRESENT:
+SLIDE 1 - The Solar System Overview:
+- Our solar system formed 4.6 billion years ago from the gravitational collapse of a giant molecular cloud
+- Contains our Sun, 8 fascinating planets, dozens of moons, and millions of asteroids and comets
+- Inner planets (Mercury, Venus, Earth, Mars) are rocky terrestrial worlds with solid surfaces
+- Outer planets (Jupiter, Saturn, Uranus, Neptune) are massive gas and ice giants
+- Each planet has unique characteristics - from Mercury's extreme temperatures to Neptune's supersonic winds
+- The asteroid belt between Mars and Jupiter contains remnants from our solar system's formation
+
+SLIDE 2 - Mars: The Red Planet and Future Home:
+- Mars is the fourth planet from the Sun, earning its nickname "Red Planet" from iron oxide (rust) covering its surface
+- Has two small, irregularly shaped moons: Phobos and Deimos, likely captured asteroids
+- Features the largest volcano in our solar system: Olympus Mons, standing 21 kilometers tall
+- Contains polar ice caps made of water and carbon dioxide ice
+- Shows evidence of ancient river valleys, suggesting water once flowed on its surface
+- Current robotic missions like Perseverance and Curiosity are actively searching for signs of past or present life
+- NASA and SpaceX are planning human missions to Mars in the 2030s
+
+CRITICAL NAVIGATION BEHAVIOR:
+You have to know what you're talking about , if you're talking about a particular slide and you are not on that slide , call navigate_to_slide function
+1. When user says "next slide", "go to slide 2", "previous slide", etc., IMMEDIATELY call navigate_to_slide function
+2. After calling the function, acknowledge: "Moving to slide X" then immediately start presenting that slide's content
+3. NEVER go silent - always continue presenting the current slide content
+4. If you finish presenting a slide, ask if they want to move to the next slide or have questions
+
+PRESENTATION BEHAVIOR:
+- Start immediately by enthusiastically presenting the current slide
+- Speak continuously about the slide content - don't wait for prompts
+- Handle interruptions gracefully, then continue presenting
+- ALWAYS use navigate_to_slide function for slide changes
+- After navigation, immediately start presenting the new slide content
+- If you run out of content, ask engaging questions or offer to move to the next slide
+- NEVER go silent - always keep the presentation flowing
+
+DEMO SUCCESS REQUIRES: 
+1. Using navigate_to_slide function correctly
+2. Continuous, engaging narration
+3. Never going silent unless interrupted`,
+            tools: functions,
+          },
+        };
+
+        // Send the instructions via data channel
+        if (dc.readyState === "open") {
+          dc.send(JSON.stringify(instructions));
+
+          // Send a message to start the presentation
+          setTimeout(() => {
+            const slideContent = getSlideContent(currentSlide);
+            const startMessage = {
+              type: "conversation.item.create",
+              item: {
+                type: "message",
+                role: "user",
+                content: [
+                  {
+                    type: "input_text",
+                    text: `Hello! Welcome to our space science presentation! Please start presenting slide ${currentSlide} about "${slideContent.title}" right now. Begin speaking immediately and present all the fascinating details about this topic. Keep talking and don't go silent! I can interrupt with questions or ask you to navigate using "next slide" or "previous slide" commands. Remember to use the navigate_to_slide function when I request changes. Start presenting now!`,
+                  },
+                ],
+              },
+            };
+            dc.send(JSON.stringify(startMessage));
+
+            const responseCreate = {
+              type: "response.create",
+            };
+            dc.send(JSON.stringify(responseCreate));
+          }, 500);
+        }
+      }
+
+      /**
+       * Start local visualization of the microphone audio (blue waveform).
+       */
+      function startLocalVisualizer(stream) {
+        const localCanvas = document.getElementById("localVisualizer");
+        const localCtx = localCanvas.getContext("2d");
+        localCanvas.width = localCanvas.offsetWidth;
+        localCanvas.height = localCanvas.offsetHeight;
+
+        const audioContext = new (window.AudioContext ||
+          window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 2048;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+
+        function draw() {
+          requestAnimationFrame(draw);
+          analyser.getByteTimeDomainData(dataArray);
+          localCtx.fillStyle = "#222222";
+          localCtx.fillRect(0, 0, localCanvas.width, localCanvas.height);
+          localCtx.lineWidth = 2;
+          localCtx.strokeStyle = "#ffffff";
+          localCtx.beginPath();
+          const sliceWidth = localCanvas.width / dataArray.length;
+          let x = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = (v * localCanvas.height) / 2;
+            if (i === 0) {
+              localCtx.moveTo(x, y);
+            } else {
+              localCtx.lineTo(x, y);
+            }
+            x += sliceWidth;
+          }
+          localCtx.lineTo(localCanvas.width, localCanvas.height / 2);
+          localCtx.stroke();
+        }
+        draw();
+      }
+
+      /**
+       * Visualizes the remote (backend) audio stream (red waveform).
+       */
+      function startBackendVisualizer(remoteStream) {
+        const backendCanvas = document.getElementById("backendVisualizer");
+        const backendCtx = backendCanvas.getContext("2d");
+        backendCanvas.width = backendCanvas.offsetWidth;
+        backendCanvas.height = backendCanvas.offsetHeight;
+
+        const audioContext = new (window.AudioContext ||
+          window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 2048;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        const source = audioContext.createMediaStreamSource(remoteStream);
+        source.connect(analyser);
+
+        function draw() {
+          requestAnimationFrame(draw);
+          analyser.getByteTimeDomainData(dataArray);
+          backendCtx.fillStyle = "rgba(255, 255, 255, 0.1)";
+          backendCtx.fillRect(0, 0, backendCanvas.width, backendCanvas.height);
+          backendCtx.lineWidth = 2;
+          backendCtx.strokeStyle = "#A855F7";
+          backendCtx.beginPath();
+          const sliceWidth = backendCanvas.width / dataArray.length;
+          let x = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = (v * backendCanvas.height) / 2;
+            if (i === 0) {
+              backendCtx.moveTo(x, y);
+            } else {
+              backendCtx.lineTo(x, y);
+            }
+            x += sliceWidth;
+          }
+          backendCtx.lineTo(backendCanvas.width, backendCanvas.height / 2);
+          backendCtx.stroke();
+        }
+        draw();
+      }
+
+      // Event listeners
+      startBtn.addEventListener("click", () => {
+        if (!isConnected) {
+          initializeConnection();
+        } else {
+          startNarration();
+        }
+      });
+
+      // Initialize UI
+      function initializeUI() {
+        // Set initial slide state
+        currentSlide = 1;
+        document.getElementById("slideNumber").textContent = currentSlide;
+        document.getElementById("currentSlideNumber").textContent =
+          currentSlide;
+        prevBtn.disabled = true;
+        nextBtn.disabled = false;
+
+        // Show only first slide
+        document.getElementById("slide1").style.display = "block";
+        document.getElementById("slide2").style.display = "none";
+      }
+
+      // Test function for AI navigation
+      function testAINavigation() {
+        const targetSlide = currentSlide === 1 ? 2 : 1;
+        console.log("Testing AI navigation to slide", targetSlide);
+
+        // Simulate what the AI would send
+        const mockDelta = {
+          name: "navigate_to_slide",
+          arguments: JSON.stringify({ slide_number: targetSlide }),
+        };
+
+        handleAIFunctionCall(mockDelta);
+
+        // Also log this test
+        logEvent("manual_test_navigation", { target_slide: targetSlide });
+      }
+
+      // Simulate what happens when user says "next slide"
+      function simulateAICommand() {
+        if (!isConnected || !dc || dc.readyState !== "open") {
+          alert("Not connected to AI");
+          return;
+        }
+
+        const targetSlide = currentSlide === 1 ? 2 : 1;
+        console.log("🎤 Simulating user saying 'next slide'");
+
+        // Send message as if user spoke
+        const userMessage = {
+          type: "conversation.item.create",
+          item: {
+            type: "message",
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text: "Next slide please",
+              },
+            ],
+          },
+        };
+
+        dc.send(JSON.stringify(userMessage));
+
+        const responseCreate = {
+          type: "response.create",
+        };
+        dc.send(JSON.stringify(responseCreate));
+
+        logEvent("user_command_simulation", {
+          command: "next slide",
+          current_slide: currentSlide,
+        });
+      }
+
+      // Update debug status display
+      function updateDebugStatus(message) {
+        const debugElement = document.getElementById("debugText");
+        if (debugElement) {
+          debugElement.textContent = message;
+          console.log("🔍 Debug:", message);
+        }
+      }
+
+      // Initialize connection and UI on page load
+      window.addEventListener("load", () => {
+        initializeUI();
+        initializeConnection();
+        updateDebugStatus("App initialized");
+      });
+    </script>
+  </body>
+</html>

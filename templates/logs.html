@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Presentation Logs</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #013BDB 0%, #33B8FF 100%);
+      min-height: 100vh;
+      color: white;
+    }
+    
+    .log-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 30px;
+      margin: 20px 0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .log-entry {
+      background: rgba(255, 255, 255, 0.05);
+      border-left: 4px solid #A855F7;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+    }
+    
+    .log-timestamp {
+      color: #33B8FF;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    
+    .log-event {
+      color: #A855F7;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+    }
+    
+    .log-slide {
+      background: #0D1938;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      display: inline-block;
+    }
+    
+    .back-btn {
+      background: linear-gradient(45deg, #A855F7, #0D1938);
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 25px;
+      text-decoration: none;
+      display: inline-block;
+      transition: transform 0.2s;
+    }
+    
+    .back-btn:hover {
+      transform: translateY(-2px);
+      color: white;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>📊 Presentation Logs</h1>
+      <a href="/" class="back-btn">← Back to Presentation</a>
+    </div>
+    
+    <div class="log-container">
+      {% if logs %}
+        {% for log in logs|reverse %}
+        <div class="log-entry">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <span class="log-timestamp">{{ log.timestamp }}</span>
+            <span class="log-slide">Slide {{ log.slide }}</span>
+          </div>
+          <div class="log-event">{{ log.event }}</div>
+          {% if log.data %}
+          <div class="mt-2">
+            <small>{{ log.data | tojson }}</small>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="text-center py-5">
+          <h3>No logs yet</h3>
+          <p>Start a presentation to see logs here</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
